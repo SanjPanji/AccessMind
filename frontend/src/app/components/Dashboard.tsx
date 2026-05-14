@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import MobileNav from './MobileNav';
+import { supabase } from '../lib/supabaseClient';
 import {
   Brain,
   Calendar,
@@ -28,25 +29,74 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [upcomingClasses, setUpcomingClasses] = useState<any[]>([]);
+  const [assignments, setAssignments] = useState<any[]>([]);
+  const [grades, setGrades] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const upcomingClasses = [
-    { id: 1, name: 'Advanced Mathematics', time: '10:00 AM', room: 'Hall 204', color: 'blue' },
-    { id: 2, name: 'Computer Science', time: '2:00 PM', room: 'Lab 3', color: 'purple' },
-    { id: 3, name: 'Physics Lab', time: '4:30 PM', room: 'Lab 1', color: 'green' }
-  ];
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+      try {
+        // Fetch upcoming classes (today's schedule)
+        const today = new Date().toISOString().split('T')[0];
+        const { data: classesData } = await supabase
+          .from('attendance')
+          .select('*, subjects(name)')
+          .gte('date', today)
+          .order('date', { ascending: true })
+          .limit(3);
+        
+        if (classesData) {
+          setUpcomingClasses(classesData.map(c => ({
+            id: c.id,
+            name: c.subjects?.name || 'Subject',
+            time: c.time_range.split('-')[0].trim(),
+            room: c.room,
+            color: c.status === 'present' ? 'blue' : 'orange'
+          })));
+        }
 
-  const assignments = [
-    { id: 1, title: 'Math Problem Set 5', dueDate: 'Tomorrow', status: 'pending', subject: 'Mathematics' },
-    { id: 2, title: 'CS Project Submission', dueDate: 'May 16', status: 'in-progress', subject: 'Computer Science' },
-    { id: 3, title: 'Physics Report', dueDate: 'May 18', status: 'pending', subject: 'Physics' }
-  ];
+        // Fetch upcoming assignments
+        const { data: assignmentsData } = await supabase
+          .from('assignments')
+          .select('*, subjects(name)')
+          .order('created_at', { ascending: false })
+          .limit(3);
 
-  const grades = [
-    { subject: 'Mathematics', grade: 'A', percentage: 92, trend: 'up' },
-    { subject: 'Computer Science', grade: 'A-', percentage: 88, trend: 'up' },
-    { subject: 'Physics', grade: 'B+', percentage: 85, trend: 'stable' },
-    { subject: 'English', grade: 'A', percentage: 94, trend: 'up' }
-  ];
+        if (assignmentsData) {
+          setAssignments(assignmentsData.map(a => ({
+            id: a.id,
+            title: a.name,
+            dueDate: 'Tomorrow', // Mock due date for now as it's not in schema
+            status: 'pending',
+            subject: a.subjects?.name || 'Subject'
+          })));
+        }
+
+        // Fetch grades overview
+        const { data: subjectsData } = await supabase
+          .from('subjects')
+          .select('*')
+          .limit(4);
+
+        if (subjectsData) {
+          setGrades(subjectsData.map(s => ({
+            subject: s.name,
+            grade: s.average >= 90 ? 'A' : s.average >= 80 ? 'B' : 'C',
+            percentage: s.average,
+            trend: 'stable'
+          })));
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, []);
 
   const quickActions = [
     { icon: FileText, label: t('dashboard.uploadAssignment'), action: () => navigate('/assignments'), color: 'blue' },
@@ -136,199 +186,222 @@ export default function Dashboard() {
           <p className="text-slate-600">{t('dashboard.subtitle')}</p>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {quickActions.map((action, index) => (
-            <button
-              key={index}
-              onClick={action.action}
-              className="bg-white p-6 rounded-2xl border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all group"
-            >
-              <div className={`inline-flex p-3 rounded-xl bg-${action.color}-50 text-${action.color}-600 mb-3 group-hover:scale-110 transition-transform`}>
-                <action.icon className="w-6 h-6" />
-              </div>
-              <p className="font-medium text-slate-900 text-left">{action.label}</p>
-            </button>
-          ))}
-        </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="flex flex-col items-center gap-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <p className="text-slate-500 font-medium">Загрузка данных...</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Quick Actions */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              {quickActions.map((action, index) => (
+                <button
+                  key={index}
+                  onClick={action.action}
+                  className="bg-white p-6 rounded-2xl border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all group"
+                >
+                  <div className={`inline-flex p-3 rounded-xl bg-${action.color}-50 text-${action.color}-600 mb-3 group-hover:scale-110 transition-transform`}>
+                    <action.icon className="w-6 h-6" />
+                  </div>
+                  <p className="font-medium text-slate-900 text-left">{action.label}</p>
+                </button>
+              ))}
+            </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Left Column */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Today's Schedule */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-blue-600" />
-                  {t('dashboard.todaysSchedule')}
-                </h3>
-                <div className="flex items-center gap-4">
-                  <span className="text-sm text-slate-500">May 14, 2026</span>
-                  <button 
-                    onClick={() => navigate('/attendance')}
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                  >
-                    {t('dashboard.viewAll')}
-                  </button>
-                </div>
-              </div>
-              <div className="space-y-4">
-                {upcomingClasses.map((classItem) => (
-                  <div
-                    key={classItem.id}
-                    className={`flex items-center gap-4 p-4 rounded-xl bg-${classItem.color}-50 border border-${classItem.color}-100 hover:shadow-md transition-all cursor-pointer`}
-                  >
-                    <div className={`w-1 h-14 bg-${classItem.color}-500 rounded-full`}></div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-slate-900">{classItem.name}</h4>
-                      <div className="flex items-center gap-4 mt-1 text-sm text-slate-600">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          {classItem.time}
-                        </span>
-                        <span>{classItem.room}</span>
-                      </div>
+            <div className="grid lg:grid-cols-3 gap-8">
+              {/* Left Column */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Today's Schedule */}
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-blue-600" />
+                      {t('dashboard.todaysSchedule')}
+                    </h3>
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm text-slate-500">
+                        {new Date().toLocaleDateString('ru-RU', { month: 'long', day: 'numeric', year: 'numeric' })}
+                      </span>
+                      <button 
+                        onClick={() => navigate('/attendance')}
+                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        {t('dashboard.viewAll')}
+                      </button>
                     </div>
-                    <button className="p-2 rounded-lg hover:bg-white/50 transition-colors">
-                      <Plus className="w-5 h-5 text-slate-600" />
+                  </div>
+                  <div className="space-y-4">
+                    {upcomingClasses.length > 0 ? upcomingClasses.map((classItem) => (
+                      <div
+                        key={classItem.id}
+                        className={`flex items-center gap-4 p-4 rounded-xl bg-${classItem.color}-50 border border-${classItem.color}-100 hover:shadow-md transition-all cursor-pointer`}
+                      >
+                        <div className={`w-1 h-14 bg-${classItem.color}-500 rounded-full`}></div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-slate-900">{classItem.name}</h4>
+                          <div className="flex items-center gap-4 mt-1 text-sm text-slate-600">
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-4 h-4" />
+                              {classItem.time}
+                            </span>
+                            <span>{classItem.room}</span>
+                          </div>
+                        </div>
+                        <button className="p-2 rounded-lg hover:bg-white/50 transition-colors">
+                          <Plus className="w-5 h-5 text-slate-600" />
+                        </button>
+                      </div>
+                    )) : (
+                      <div className="text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                        <p className="text-slate-500">На сегодня занятий нет</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Assignments */}
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-purple-600" />
+                      {t('dashboard.upcomingAssignments')}
+                    </h3>
+                    <button
+                      onClick={() => navigate('/assignments')}
+                      className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      {t('dashboard.viewAll')}
                     </button>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Assignments */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-purple-600" />
-                  {t('dashboard.upcomingAssignments')}
-                </h3>
-                <button
-                  onClick={() => navigate('/assignments')}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  {t('dashboard.viewAll')}
-                </button>
-              </div>
-              <div className="space-y-3">
-                {assignments.map((assignment) => (
-                  <div
-                    key={assignment.id}
-                    className="flex items-center gap-4 p-4 rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
-                  >
-                    <div className={`p-2 rounded-lg ${
-                      assignment.status === 'pending' ? 'bg-orange-50' :
-                      assignment.status === 'in-progress' ? 'bg-blue-50' : 'bg-green-50'
-                    }`}>
-                      {assignment.status === 'pending' ? (
-                        <AlertCircle className="w-5 h-5 text-orange-600" />
-                      ) : assignment.status === 'in-progress' ? (
-                        <Clock className="w-5 h-5 text-blue-600" />
-                      ) : (
-                        <CheckCircle2 className="w-5 h-5 text-green-600" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-slate-900">{assignment.title}</h4>
-                      <p className="text-sm text-slate-600">{assignment.subject}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-slate-900">Due {assignment.dueDate}</p>
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        assignment.status === 'pending' ? 'bg-orange-100 text-orange-700' :
-                        assignment.status === 'in-progress' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
-                      }`}>
-                        {assignment.status === 'pending' ? 'Not Started' :
-                         assignment.status === 'in-progress' ? 'In Progress' : 'Completed'}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column */}
-          <div className="space-y-6">
-            {/* Accessibility Quick Toggle */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-              <h3 className="text-lg font-bold text-slate-900 mb-4">{t('dashboard.quickAccessibility')}</h3>
-              <div className="space-y-3">
-                <button className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-blue-50 hover:border-blue-200 border border-slate-200 transition-all">
-                  <span className="text-sm font-medium text-slate-700">{t('dashboard.adhdMode')}</span>
-                  <Zap className="w-4 h-4 text-slate-400" />
-                </button>
-                <button className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-blue-50 hover:border-blue-200 border border-slate-200 transition-all">
-                  <span className="text-sm font-medium text-slate-700">{t('dashboard.voiceCommands')}</span>
-                  <Mic className="w-4 h-4 text-slate-400" />
-                </button>
-                <button className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-blue-50 hover:border-blue-200 border border-slate-200 transition-all">
-                  <span className="text-sm font-medium text-slate-700">{t('dashboard.textToSpeech')}</span>
-                  <BookOpen className="w-4 h-4 text-slate-400" />
-                </button>
-              </div>
-            </div>
-
-            {/* Grades Overview */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-green-600" />
-                  {t('dashboard.currentGrades')}
-                </h3>
-                <button 
-                  onClick={() => navigate('/grades')}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  {t('dashboard.viewAll')}
-                </button>
-              </div>
-              <div className="space-y-4">
-                {grades.map((grade, index) => (
-                  <div key={index} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-slate-700">{grade.subject}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg font-bold text-slate-900">{grade.grade}</span>
-                        {grade.trend === 'up' && <TrendingUp className="w-4 h-4 text-green-600" />}
-                      </div>
-                    </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2">
+                  <div className="space-y-3">
+                    {assignments.length > 0 ? assignments.map((assignment) => (
                       <div
-                        className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all"
-                        style={{ width: `${grade.percentage}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-xs text-slate-500">{grade.percentage}%</span>
+                        key={assignment.id}
+                        className="flex items-center gap-4 p-4 rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
+                      >
+                        <div className={`p-2 rounded-lg ${
+                          assignment.status === 'pending' ? 'bg-orange-50' :
+                          assignment.status === 'in-progress' ? 'bg-blue-50' : 'bg-green-50'
+                        }`}>
+                          {assignment.status === 'pending' ? (
+                            <AlertCircle className="w-5 h-5 text-orange-600" />
+                          ) : assignment.status === 'in-progress' ? (
+                            <Clock className="w-5 h-5 text-blue-600" />
+                          ) : (
+                            <CheckCircle2 className="w-5 h-5 text-green-600" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-slate-900">{assignment.title}</h4>
+                          <p className="text-sm text-slate-600">{assignment.subject}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-medium text-slate-900">Due {assignment.dueDate}</p>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            assignment.status === 'pending' ? 'bg-orange-100 text-orange-700' :
+                            assignment.status === 'in-progress' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
+                          }`}>
+                            {assignment.status === 'pending' ? 'Not Started' :
+                             assignment.status === 'in-progress' ? 'In Progress' : 'Completed'}
+                          </span>
+                        </div>
+                      </div>
+                    )) : (
+                      <div className="text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                        <p className="text-slate-500">Нет ближайших заданий</p>
+                      </div>
+                    )}
                   </div>
-                ))}
+                </div>
               </div>
-            </div>
 
-            {/* Learning Stats */}
-            <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-lg p-6 text-white">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <Award className="w-5 h-5" />
-                {t('dashboard.thisWeeksProgress')}
-              </h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-blue-100">{t('dashboard.studyTime')}</span>
-                  <span className="text-xl font-bold">12.5 hrs</span>
+              {/* Right Column */}
+              <div className="space-y-6">
+                {/* Accessibility Quick Toggle */}
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                  <h3 className="text-lg font-bold text-slate-900 mb-4">{t('dashboard.quickAccessibility')}</h3>
+                  <div className="space-y-3">
+                    <button className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-blue-50 hover:border-blue-200 border border-slate-200 transition-all">
+                      <span className="text-sm font-medium text-slate-700">{t('dashboard.adhdMode')}</span>
+                      <Zap className="w-4 h-4 text-slate-400" />
+                    </button>
+                    <button className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-blue-50 hover:border-blue-200 border border-slate-200 transition-all">
+                      <span className="text-sm font-medium text-slate-700">{t('dashboard.voiceCommands')}</span>
+                      <Mic className="w-4 h-4 text-slate-400" />
+                    </button>
+                    <button className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-blue-50 hover:border-blue-200 border border-slate-200 transition-all">
+                      <span className="text-sm font-medium text-slate-700">{t('dashboard.textToSpeech')}</span>
+                      <BookOpen className="w-4 h-4 text-slate-400" />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-blue-100">{t('dashboard.assignmentsCompleted')}</span>
-                  <span className="text-xl font-bold">8</span>
+
+                {/* Grades Overview */}
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                      <BarChart3 className="w-5 h-5 text-green-600" />
+                      {t('dashboard.currentGrades')}
+                    </h3>
+                    <button 
+                      onClick={() => navigate('/grades')}
+                      className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      {t('dashboard.viewAll')}
+                    </button>
+                  </div>
+                  <div className="space-y-4">
+                    {grades.length > 0 ? grades.map((grade, index) => (
+                      <div key={index} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-slate-700">{grade.subject}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-bold text-slate-900">{grade.grade}</span>
+                            {grade.trend === 'up' && <TrendingUp className="w-4 h-4 text-green-600" />}
+                          </div>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-2">
+                          <div
+                            className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all"
+                            style={{ width: `${grade.percentage}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-xs text-slate-500">{grade.percentage}%</span>
+                      </div>
+                    )) : (
+                      <div className="text-center py-4 text-slate-500">Нет данных об оценках</div>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-blue-100">{t('dashboard.aiAssistsUsed')}</span>
-                  <span className="text-xl font-bold">24</span>
+
+                {/* Learning Stats */}
+                <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-lg p-6 text-white">
+                  <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                    <Award className="w-5 h-5" />
+                    {t('dashboard.thisWeeksProgress')}
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-blue-100">{t('dashboard.studyTime')}</span>
+                      <span className="text-xl font-bold">12.5 hrs</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-blue-100">{t('dashboard.assignmentsCompleted')}</span>
+                      <span className="text-xl font-bold">8</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-blue-100">{t('dashboard.aiAssistsUsed')}</span>
+                      <span className="text-xl font-bold">24</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </>
+        )}
       </main>
 
       {/* Floating AI Assistant */}
