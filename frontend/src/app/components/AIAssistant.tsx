@@ -19,7 +19,7 @@ import {
 import { motion } from 'motion/react';
 import * as pdfjsLib from 'pdfjs-dist';
 import mammoth from 'mammoth';
-import { supabase } from '../../../lib/supabaseClient';
+import { supabase } from "../../lib/supabaseClient";
 
 // Configure PDFJS worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
@@ -29,7 +29,7 @@ export default function AIAssistant() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [processing, setProcessing] = useState(false);
   const [aiResponse, setAiResponse] = useState<any>(null);
-  const [chatMessages, setChatMessages] = useState<{role: string, content: string}[]>([
+  const [chatMessages, setChatMessages] = useState<{ role: string, content: string }[]>([
     { role: 'assistant', content: 'Hi! I can help you search materials, explain assignments, navigate the platform, or remind you about deadlines.' }
   ]);
   const [chatInput, setChatInput] = useState('');
@@ -39,7 +39,7 @@ export default function AIAssistant() {
   const extractTextFromFile = async (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      
+
       reader.onload = async (e) => {
         try {
           const result = e.target?.result;
@@ -85,18 +85,22 @@ export default function AIAssistant() {
       setSelectedFile(file);
       setProcessing(true);
       setShowAnswers({});
-      
+
       try {
         const text = await extractTextFromFile(file);
-        const truncatedText = text.substring(0, 15000); 
+        const truncatedText = text.substring(0, 15000);
 
-        const { data, error } = await supabase.functions.invoke('ai-assistant', {
-          body: { action: 'process_document', text: truncatedText }
+        const resp = await fetch('http://localhost:8000/api/ai-assistant', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'process_document', text: truncatedText })
         });
 
-        if (error) throw error;
+        if (!resp.ok) throw new Error('API Error');
+        const data = await resp.json();
+
         if (data) {
-          setAiResponse(typeof data === 'string' ? JSON.parse(data) : data);
+          setAiResponse(data);
         }
       } catch (error) {
         console.error("Error processing file:", error);
@@ -118,13 +122,17 @@ export default function AIAssistant() {
     setChatLoading(true);
 
     try {
-      const systemPrompt = \`You are AccessMind's AI Assistant. You help students search materials, explain assignments, navigate the platform, and remind them of deadlines. Answer in Russian. Keep responses concise and helpful.\`;
-      
-      const { data, error } = await supabase.functions.invoke('ai-assistant', {
-        body: { action: 'chat', messages: newMessages }
+      const systemPrompt = `You are AccessMind's AI Assistant. You help students search materials, explain assignments, navigate the platform, and remind them of deadlines. Answer in Russian. Keep responses concise and helpful.`;
+
+      const resp = await fetch('http://localhost:8000/api/ai-assistant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'chat', messages: newMessages })
       });
 
-      if (error) throw error;
+      if (!resp.ok) throw new Error('API Error');
+      const data = await resp.json();
+
       if (data && data.reply) {
         setChatMessages([...newMessages, { role: 'assistant', content: data.reply }]);
       }
@@ -262,8 +270,8 @@ export default function AIAssistant() {
                   transition={{ delay: index * 0.1 }}
                   className="bg-white rounded-xl shadow-md border border-slate-200 p-5 hover:shadow-lg transition-all"
                 >
-                  <div className={\`inline-flex p-3 rounded-xl bg-\${feature.color}-50 mb-3\`}>
-                    <feature.icon className={\`w-6 h-6 text-\${feature.color}-600\`} />
+                  <div className={`inline-flex p-3 rounded-xl bg-${feature.color}-50 mb-3`}>
+                    <feature.icon className={`w-6 h-6 text-${feature.color}-600`} />
                   </div>
                   <h4 className="font-semibold text-slate-900 mb-2">{feature.title}</h4>
                   <p className="text-sm text-slate-600">{feature.description}</p>
@@ -353,7 +361,7 @@ export default function AIAssistant() {
                             <strong>Ответ:</strong> {item.answer}
                           </motion.p>
                         ) : (
-                          <button 
+                          <button
                             onClick={() => setShowAnswers({ ...showAnswers, [index]: true })}
                             className="text-sm text-orange-600 hover:text-orange-700 font-medium"
                           >
@@ -401,8 +409,8 @@ export default function AIAssistant() {
           </div>
           <div className="p-6 flex-1 overflow-y-auto space-y-4 bg-slate-50">
             {chatMessages.map((msg, idx) => (
-              <div key={idx} className={\`flex \${msg.role === 'user' ? 'justify-end' : 'justify-start'}\`}>
-                <div className={\`max-w-[80%] rounded-2xl p-4 \${msg.role === 'user' ? 'bg-blue-600 text-white rounded-br-none' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-none shadow-sm'}\`}>
+              <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[80%] rounded-2xl p-4 ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-br-none' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-none shadow-sm'}`}>
                   {msg.content}
                 </div>
               </div>
@@ -425,8 +433,8 @@ export default function AIAssistant() {
                 className="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
                 disabled={chatLoading}
               />
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={chatLoading || !chatInput.trim()}
                 className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-medium shadow-md hover:shadow-lg transition-all disabled:opacity-50 flex items-center gap-2"
               >
