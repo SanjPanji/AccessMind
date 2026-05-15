@@ -24,55 +24,65 @@ export default function Attendance() {
   const attendanceData = [
     {
       id: 1,
-      date: 'May 14, 2026',
-      day: 'Wednesday',
+      date: t('attendance.may14'),
+      day: t('attendance.wednesday'),
       subject: 'Mathematics',
-      time: '10:00 AM - 11:30 AM',
+      time: '10:00 - 11:30',
       status: 'present',
-      teacher: 'Dr. Smith',
-      room: 'Hall 204'
+      teacher: t('attendance.drSmith'),
+      room: t('dashboard.hall204')
     },
     {
       id: 2,
-      date: 'May 14, 2026',
-      day: 'Wednesday',
+      date: t('attendance.may14'),
+      day: t('attendance.wednesday'),
       subject: 'Computer Science',
-      time: '2:00 PM - 3:30 PM',
+      time: '14:00 - 15:30',
       status: 'present',
-      teacher: 'Prof. Johnson',
-      room: 'Lab 3'
+      teacher: t('attendance.profJohnson'),
+      room: t('dashboard.lab3')
     },
     {
       id: 3,
-      date: 'May 13, 2026',
-      day: 'Tuesday',
+      date: t('attendance.may13'),
+      day: t('attendance.tuesday'),
       subject: 'Physics',
-      time: '9:00 AM - 10:30 AM',
+      time: '09:00 - 10:30',
       status: 'absent',
-      teacher: 'Dr. Williams',
-      room: 'Lab 1'
+      teacher: t('attendance.drWilliams'),
+      room: t('dashboard.lab1')
     },
     {
       id: 4,
-      date: 'May 13, 2026',
-      day: 'Tuesday',
+      date: t('attendance.may13'),
+      day: t('attendance.tuesday'),
       subject: 'English',
-      time: '1:00 PM - 2:30 PM',
+      time: '13:00 - 14:30',
       status: 'present',
-      teacher: 'Ms. Davis',
-      room: 'Hall 101'
+      teacher: t('attendance.msDavis'),
+      room: t('attendance.hall101')
     },
     {
       id: 5,
-      date: 'May 12, 2026',
-      day: 'Monday',
+      date: t('attendance.may12'),
+      day: t('attendance.monday'),
       subject: 'Mathematics',
-      time: '10:00 AM - 11:30 AM',
+      time: '10:00 - 11:30',
       status: 'late',
-      teacher: 'Dr. Smith',
-      room: 'Hall 204'
+      teacher: t('attendance.drSmith'),
+      room: t('dashboard.hall204')
     }
   ];
+
+  const translateSubject = (subject: string) => {
+    switch (subject) {
+      case 'Mathematics': return t('dashboard.math');
+      case 'Computer Science': return t('dashboard.cs');
+      case 'Physics': return t('dashboard.physics');
+      case 'English': return t('dashboard.english');
+      default: return subject;
+    }
+  };
 
   const subjects = ['all', 'Mathematics', 'Computer Science', 'Physics', 'English'];
 
@@ -193,7 +203,7 @@ export default function Attendance() {
               </div>
             </div>
             <div className="text-3xl font-bold text-slate-900 mb-1">{stats.late}</div>
-            <div className="text-sm text-slate-600">Late</div>
+            <div className="text-sm text-slate-600">{t('attendance.late')}</div>
           </motion.div>
         </div>
 
@@ -209,7 +219,7 @@ export default function Attendance() {
                     : 'bg-white text-slate-700 border border-slate-200 hover:border-blue-300'
                 }`}
               >
-                {subject === 'all' ? t('grades.allSubjects') : subject}
+                {subject === 'all' ? t('grades.allSubjects') : translateSubject(subject)}
               </button>
             ))}
           </div>
@@ -235,9 +245,9 @@ export default function Attendance() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-bold text-slate-900">{item.subject}</h3>
+                        <h3 className="text-lg font-bold text-slate-900">{translateSubject(item.subject)}</h3>
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold bg-${color}-100 text-${color}-700 capitalize`}>
-                          {item.status}
+                          {t(`attendance.${item.status}`)}
                         </span>
                       </div>
                       <div className="grid sm:grid-cols-2 gap-2 text-sm text-slate-600">

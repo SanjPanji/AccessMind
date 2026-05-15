@@ -23,7 +23,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useSpeech } from '../../lib/hooks/useSpeech';
-import type { CommandMatch, VoiceLang } from '../../lib/commandParser';
+import { processVoiceCommand, type CommandMatch, type VoiceLang } from '../../lib/commandParser';
+import { useAccessibility } from '../context/AccessibilityContext';
 
 const I18N_TO_VOICE_LANG: Record<string, VoiceLang> = {
   en: 'en',
@@ -101,6 +102,7 @@ const createCommandDispatcher = (navigate: any): CommandDispatcher => {
 export default function VoiceNavigation() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+  const { settings, updateSettings } = useAccessibility();
   const {
     speechState,
     errorMessage,
@@ -111,6 +113,8 @@ export default function VoiceNavigation() {
     startListening,
     stopRecording,
     speak,
+    pause,
+    resume,
     cancel,
     changeLanguage: changeVoiceLang,
   } = useSpeech();
@@ -122,6 +126,24 @@ export default function VoiceNavigation() {
   const [voiceResponse, setVoiceResponse] = useState('');
   const [recentCommands, setRecentCommands] = useState<string[]>([]);
   const [lastCommandStatus, setLastCommandStatus] = useState<'success' | 'error' | null>(null);
+
+  // TTS State
+  const [ttsProgress, setTtsProgress] = useState(0);
+  const [currentSpeechText, setCurrentSpeechText] = useState('');
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+
+  // Load voices
+  useEffect(() => {
+    const loadVoices = () => {
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        setAvailableVoices(window.speechSynthesis.getVoices());
+      }
+    };
+    loadVoices();
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+  }, []);
 
   // Sync i18n language → voice language on mount and change
   useEffect(() => {
@@ -198,6 +220,18 @@ export default function VoiceNavigation() {
     }
   };
 
+  // ── Manual execution for UI buttons ─────────────────────────────────
+  const executePhrase = async (phrase: string) => {
+    console.log('[VoiceNavigation] 🔄 Executing phrase:', phrase);
+    setRecognizedText(phrase);
+    setRecentCommands(prev => [phrase, ...prev.slice(0, 4)]);
+    setVoiceResponse(t('voice.processing'));
+    
+    // Parse using the existing engine
+    const match = await processVoiceCommand(phrase, voiceLang);
+    handleCommandResult(phrase, match);
+  };
+
   // ── UI toggles ─────────────────────────────────────────────────────
   const toggleListening = () => {
     if (speechState === 'listening') {
@@ -217,12 +251,62 @@ export default function VoiceNavigation() {
     }
   };
 
+  const getPageText = () => {
+    const main = document.querySelector('main');
+    return main ? main.innerText : document.body.innerText;
+  };
+
+  const handleSpeak = (text: string, startIndex = 0) => {
+    const textToSpeak = text.substring(startIndex);
+    setCurrentSpeechText(text);
+    speak(textToSpeak, voiceLang, {
+      volume: settings.ttsVolume / 100,
+      rate: settings.ttsRate,
+      voiceURI: settings.ttsVoiceURI,
+      onProgress: (percent, charIndex) => {
+        const totalChars = text.length;
+        const currentTotalIndex = startIndex + charIndex;
+        setTtsProgress(Math.min(100, Math.round((currentTotalIndex / totalChars) * 100)));
+      }
+    });
+  };
+
   const toggleSpeaking = () => {
     if (speechState === 'speaking') {
-      cancel();
+      pause();
+    } else if (speechState === 'paused') {
+      resume();
     } else {
-      speak(t('voice.currentlyReading'));
+      const text = getPageText() || t('voice.currentlyReading');
+      handleSpeak(text);
     }
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const percent = Number(e.target.value);
+    setTtsProgress(percent);
+    if (!currentSpeechText) return;
+    
+    const startIndex = Math.floor(currentSpeechText.length * (percent / 100));
+    if (speechState === 'speaking' || speechState === 'paused') {
+      handleSpeak(currentSpeechText, startIndex);
+    }
+  };
+
+  const skipForward = () => {
+    if (!currentSpeechText) return;
+    const newPercent = Math.min(100, ttsProgress + 10);
+    setTtsProgress(newPercent);
+    const startIndex = Math.floor(currentSpeechText.length * (newPercent / 100));
+    handleSpeak(currentSpeechText, startIndex);
+  };
+
+  const skipBackward = () => {
+    if (!currentSpeechText) return;
+    const newPercent = Math.max(0, ttsProgress - 10);
+    setTtsProgress(newPercent);
+    const startIndex = Math.floor(currentSpeechText.length * (newPercent / 100));
+    handleSpeak(currentSpeechText, startIndex);
   };
 
   // ── Determine mic button state label ───────────────────────────────
@@ -423,7 +507,7 @@ export default function VoiceNavigation() {
 
               <div className="space-y-4">
                 <div className="flex items-center justify-center gap-3">
-                  <button className="p-3 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors">
+                  <button onClick={skipBackward} className="p-3 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors">
                     <SkipBack className="w-5 h-5 text-slate-700" />
                   </button>
                   <button
@@ -436,22 +520,38 @@ export default function VoiceNavigation() {
                       <Play className="w-6 h-6" />
                     )}
                   </button>
-                  <button className="p-3 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors">
+                  <button onClick={skipForward} className="p-3 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors">
                     <SkipForward className="w-5 h-5 text-slate-700" />
                   </button>
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm text-slate-600">
+                    <span>Progress</span>
+                    <span>{ttsProgress}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={ttsProgress}
+                    onChange={handleSeek}
+                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-green-600"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm text-slate-600">
                     <span>{t('voice.readingSpeed')}</span>
-                    <span>1.0x</span>
+                    <span>{settings.ttsRate.toFixed(1)}x</span>
                   </div>
                   <input
                     type="range"
                     min="0.5"
                     max="2"
                     step="0.1"
-                    defaultValue="1"
+                    value={settings.ttsRate}
+                    onChange={(e) => updateSettings({ ttsRate: Number(e.target.value) })}
                     className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                   />
                 </div>
@@ -459,13 +559,14 @@ export default function VoiceNavigation() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm text-slate-600">
                     <span>{t('voice.volume')}</span>
-                    <span>80%</span>
+                    <span>{settings.ttsVolume}%</span>
                   </div>
                   <input
                     type="range"
                     min="0"
                     max="100"
-                    defaultValue="80"
+                    value={settings.ttsVolume}
+                    onChange={(e) => updateSettings({ ttsVolume: Number(e.target.value) })}
                     className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
                   />
                 </div>
@@ -514,6 +615,7 @@ export default function VoiceNavigation() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
+                    onClick={() => executePhrase(cmd.command)}
                     className="flex items-start gap-4 p-4 bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
                   >
                     <div className="text-3xl">{cmd.icon}</div>
@@ -535,17 +637,7 @@ export default function VoiceNavigation() {
                     key={index}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => {
-                      // Симулируем распознавание фразы и выполняем команду
-                      console.log('[VoiceNavigation] 🔄 Quick phrase pressed:', phrase);
-                      setRecognizedText(phrase);
-                      setRecentCommands(prev => [phrase, ...prev.slice(0, 4)]);
-                      
-                      // Используем commandParser напрямую (из hooks)
-                      // Для быстрых фраз мы должны выполнить через dispatcher
-                      // Это будет обработано как обычная голосовая команда
-                      setVoiceResponse(`${t('voice.executingLocal')}`);
-                    }}
+                    onClick={() => executePhrase(phrase)}
                     className="px-4 py-2 bg-white border border-pink-200 rounded-full text-sm font-medium text-slate-700 hover:bg-pink-50 hover:border-pink-300 transition-all"
                   >
                     "{phrase}"
@@ -568,12 +660,28 @@ export default function VoiceNavigation() {
                 </div>
                 <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
                   <span className="text-sm font-medium text-slate-700">{t('voice.voiceType')}</span>
-                  <span className="text-sm text-blue-600">{t('voice.naturalFemale')}</span>
+                  <select 
+                    className="text-sm text-blue-600 bg-transparent border-none outline-none text-right cursor-pointer max-w-[200px] truncate"
+                    value={settings.ttsVoiceURI || ''}
+                    onChange={(e) => updateSettings({ ttsVoiceURI: e.target.value || null })}
+                  >
+                    <option value="">{t('voice.naturalFemale')} (Default)</option>
+                    {availableVoices.map(v => (
+                      <option key={v.voiceURI} value={v.voiceURI}>
+                        {v.name} ({v.lang})
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
                   <span className="text-sm font-medium text-slate-700">{t('voice.autoRead')}</span>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" />
+                    <input 
+                      type="checkbox" 
+                      className="sr-only peer" 
+                      checked={settings.autoRead}
+                      onChange={(e) => updateSettings({ autoRead: e.target.checked })}
+                    />
                     <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                   </label>
                 </div>

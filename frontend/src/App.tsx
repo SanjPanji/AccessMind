@@ -10,10 +10,12 @@ import Attendance from './app/components/Attendance';
 import Grades from './app/components/Grades';
 import Profile from './app/components/Profile';
 import Notifications from './app/components/Notifications';
+import LanguageSwitcher from './app/components/LanguageSwitcher';
 
 export default function App() {
   return (
     <BrowserRouter>
+      <LanguageSwitcher />
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />

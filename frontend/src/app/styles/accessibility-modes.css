@@ -1,0 +1,403 @@
+/**
+ * accessibility-modes.css
+ *
+ * All three accessibility modes are implemented as CSS classes on <html>.
+ * Classes are applied/removed by AccessibilityContext.tsx at runtime.
+ *
+ * Mode classes:
+ *   html.mode-adhd        → ADHD Mode
+ *   html.mode-dyslexia    → Dyslexia Mode
+ *   html.mode-low-vision  → Low Vision Mode
+ *
+ * Individual setting classes:
+ *   html.setting-high-contrast
+ *   html.setting-large-text
+ *   html.contrast-low / .contrast-normal / .contrast-high
+ */
+
+/* ============================================================
+   SHARED: Reduced motion (respects OS preference + ADHD mode)
+   ============================================================ */
+
+html.mode-adhd *,
+html.mode-adhd *::before,
+html.mode-adhd *::after {
+  /* Trim all transitions/animations for a calmer, less distracting UI */
+  transition-duration: 80ms !important;
+  animation-duration: 80ms !important;
+  animation-iteration-count: 1 !important;
+}
+
+/* ============================================================
+   ADHD MODE
+   Focus-centered: reduced visual noise, stronger active element
+   indicators, cleaner spacing between sections.
+   ============================================================ */
+
+html.mode-adhd {
+  /* Calm, solid background — no busy gradients */
+  --adhd-bg: #F1F5F9;
+  --adhd-card-bg: #FFFFFF;
+  --adhd-section-gap: 2.5rem;
+}
+
+/* Override busy gradient backgrounds with solid equivalents */
+html.mode-adhd body {
+  background-color: var(--adhd-bg) !important;
+}
+
+/* Sections and cards get extra breathing room */
+html.mode-adhd main > * + * {
+  margin-top: var(--adhd-section-gap) !important;
+}
+
+html.mode-adhd .grid {
+  gap: 1.5rem !important;
+}
+
+/* Remove gradient backgrounds from cards/containers */
+html.mode-adhd .bg-gradient-to-br,
+html.mode-adhd .bg-gradient-to-r,
+html.mode-adhd .bg-gradient-to-bl {
+  background-image: none !important;
+  background-color: var(--adhd-card-bg) !important;
+}
+
+/* Exception: keep gradient on primary action buttons for clear affordance */
+html.mode-adhd button.bg-gradient-to-r {
+  background-image: linear-gradient(to right, #2563EB, #1D4ED8) !important;
+}
+
+/* Mute decorative / secondary icons slightly */
+html.mode-adhd svg:not(.primary-action-icon) {
+  opacity: 0.75;
+}
+
+/* Stronger, unmissable focus ring for keyboard users */
+html.mode-adhd *:focus-visible {
+  outline: 3px solid #2563EB !important;
+  outline-offset: 3px !important;
+  border-radius: 6px;
+}
+
+/* Active/selected cards get a strong left accent border */
+html.mode-adhd [data-active="true"],
+html.mode-adhd .border-blue-500,
+html.mode-adhd .border-blue-600 {
+  border-left: 4px solid #2563EB !important;
+}
+
+/* Primary buttons: extra shadow + bold for clear call-to-action */
+html.mode-adhd button[type="submit"],
+html.mode-adhd .btn-primary {
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3) !important;
+  font-weight: 700 !important;
+}
+
+/* Simplify headers: remove decorative gradient text */
+html.mode-adhd .bg-clip-text {
+  background-image: none !important;
+  -webkit-text-fill-color: #0F172A !important;
+  color: #0F172A !important;
+}
+
+/* Add clear spacing between logical content blocks */
+html.mode-adhd .space-y-3 { row-gap: 1rem !important; }
+html.mode-adhd .space-y-4 { row-gap: 1.25rem !important; }
+html.mode-adhd .space-y-6 { row-gap: 2rem !important; }
+
+
+/* ============================================================
+   DYSLEXIA MODE
+   Optimized typography: OpenDyslexic font, generous spacing,
+   left-aligned text, comfortable reading width.
+   ============================================================ */
+
+html.mode-dyslexia {
+  /* OpenDyslexic is injected via JS when mode activates */
+  font-family: 'OpenDyslexic', 'Comic Sans MS', 'Trebuchet MS', sans-serif !important;
+}
+
+html.mode-dyslexia *,
+html.mode-dyslexia *::before,
+html.mode-dyslexic *::after {
+  /* Apply dyslexia-friendly font to every element */
+  font-family: 'OpenDyslexic', 'Comic Sans MS', 'Trebuchet MS', sans-serif !important;
+
+  /* Increased letter and word spacing reduces letter-confusion */
+  letter-spacing: 0.10em !important;
+  word-spacing: 0.16em !important;
+}
+
+/* Generous line height for comfortable reading */
+html.mode-dyslexia p,
+html.mode-dyslexia li,
+html.mode-dyslexia label,
+html.mode-dyslexia span,
+html.mode-dyslexia td,
+html.mode-dyslexia th {
+  line-height: 1.9 !important;
+}
+
+/* Never justify text — ragged right is easier for dyslexic readers */
+html.mode-dyslexia * {
+  text-align: left !important;
+}
+
+/* Comfortable reading width prevents long line fatigue */
+html.mode-dyslexia p {
+  max-width: 70ch;
+  font-size: 1.05em !important;
+}
+
+/* Headings: slightly more spacing */
+html.mode-dyslexia h1,
+html.mode-dyslexia h2,
+html.mode-dyslexia h3,
+html.mode-dyslexia h4 {
+  line-height: 1.5 !important;
+  letter-spacing: 0.04em !important;
+}
+
+/* Button text: left-aligned, not centered, for predictability */
+html.mode-dyslexia button {
+  letter-spacing: 0.06em !important;
+}
+
+/* Form inputs: generous line height */
+html.mode-dyslexia input,
+html.mode-dyslexia textarea,
+html.mode-dyslexia select {
+  line-height: 1.7 !important;
+  letter-spacing: 0.06em !important;
+}
+
+/* Slightly increased paragraph contrast */
+html.mode-dyslexia p,
+html.mode-dyslexia li {
+  color: #1e293b !important;
+}
+
+/* ============================================================
+   LOW VISION MODE
+   Larger text, high contrast, bigger tap targets.
+   ============================================================ */
+
+html.mode-low-vision {
+  /* Scale the entire rem-based layout up by 25% */
+  font-size: 120% !important;
+
+  /* Override custom property used by theme.css */
+  --font-size: 20px !important;
+}
+
+/* Ensure body text also scales */
+html.mode-low-vision body {
+  font-size: 1.15rem !important;
+}
+
+/* All headings scale proportionally larger */
+html.mode-low-vision h1 { font-size: 2rem !important; }
+html.mode-low-vision h2 { font-size: 1.75rem !important; }
+html.mode-low-vision h3 { font-size: 1.4rem !important; }
+html.mode-low-vision h4 { font-size: 1.15rem !important; }
+
+/* Minimum tap target size for all interactive elements */
+html.mode-low-vision button,
+html.mode-low-vision a,
+html.mode-low-vision input,
+html.mode-low-vision select,
+html.mode-low-vision textarea,
+html.mode-low-vision label[for] {
+  min-height: 48px !important;
+  min-width: 48px !important;
+  padding-top: 0.6rem !important;
+  padding-bottom: 0.6rem !important;
+}
+
+/* Thicker borders for better visibility */
+html.mode-low-vision .border,
+html.mode-low-vision .border-slate-200,
+html.mode-low-vision .border-blue-200 {
+  border-width: 2px !important;
+}
+
+/* High contrast text */
+html.mode-low-vision body,
+html.mode-low-vision p,
+html.mode-low-vision span,
+html.mode-low-vision li {
+  color: #0F172A !important;
+}
+
+/* High contrast focus ring */
+html.mode-low-vision *:focus-visible {
+  outline: 4px solid #1D4ED8 !important;
+  outline-offset: 4px !important;
+}
+
+/* Cards: stronger shadow + border so they're clearly distinguishable */
+html.mode-low-vision .rounded-2xl,
+html.mode-low-vision .rounded-xl {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18) !important;
+  border-width: 2px !important;
+}
+
+/* Navigation items: larger, easier to tap */
+html.mode-low-vision nav button,
+html.mode-low-vision header button {
+  padding: 0.75rem !important;
+}
+
+/* Icon sizes bump up */
+html.mode-low-vision svg {
+  transform: scale(1.15);
+}
+
+/* Badges and labels: bigger font */
+html.mode-low-vision .text-xs { font-size: 0.85rem !important; }
+html.mode-low-vision .text-sm { font-size: 0.95rem !important; }
+
+/* ============================================================
+   INDIVIDUAL SETTINGS
+   ============================================================ */
+
+/* --- High Contrast --- */
+html.setting-high-contrast {
+  --foreground: #000000;
+  --background: #ffffff;
+  --primary: #0039CC;
+  --muted-foreground: #1e293b;
+  --border: #64748B;
+}
+
+html.setting-high-contrast body {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+html.setting-high-contrast p,
+html.setting-high-contrast span,
+html.setting-high-contrast li,
+html.setting-high-contrast h1,
+html.setting-high-contrast h2,
+html.setting-high-contrast h3,
+html.setting-high-contrast h4 {
+  color: #000000 !important;
+}
+
+html.setting-high-contrast *:focus-visible {
+  outline: 3px solid #000000 !important;
+}
+
+/* --- Large Text (standalone, without Low Vision mode) --- */
+html.setting-large-text {
+  --font-size: 20px;
+}
+
+html.setting-large-text body {
+  font-size: 1.15rem !important;
+}
+
+html.setting-large-text h1 { font-size: 1.9rem !important; }
+html.setting-large-text h2 { font-size: 1.6rem !important; }
+html.setting-large-text h3 { font-size: 1.3rem !important; }
+
+/* --- Color Contrast Levels --- */
+html.contrast-high body,
+html.contrast-high p,
+html.contrast-high span {
+  color: #0F172A !important;
+}
+
+html.contrast-high .text-slate-500,
+html.contrast-high .text-slate-400 {
+  color: #334155 !important;
+}
+
+html.contrast-high .bg-slate-50 {
+  background-color: #e2e8f0 !important;
+}
+
+html.contrast-low body {
+  opacity: 0.95;
+}
+
+/* ============================================================
+   SIMPLIFIED MODE
+   Essential features only — minimal visual complexity.
+   ============================================================ */
+
+html.mode-simplified * {
+  transition-duration: 50ms !important;
+  animation: none !important;
+}
+
+html.mode-simplified body {
+  background-color: #F8FAFC !important;
+}
+
+/* Hide decorative elements */
+html.mode-simplified .bg-gradient-to-br,
+html.mode-simplified .bg-gradient-to-r {
+  background-image: none !important;
+  background-color: #ffffff !important;
+}
+
+/* Large, easy-to-tap cards */
+html.mode-simplified .rounded-2xl,
+html.mode-simplified .rounded-xl {
+  border-radius: 1rem !important;
+  border-width: 2px !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Simplified navigation: bigger tap areas */
+html.mode-simplified button,
+html.mode-simplified a {
+  min-height: 44px !important;
+  font-size: 1rem !important;
+}
+
+/* One column layout on small screens */
+html.mode-simplified .grid.lg\:grid-cols-3,
+html.mode-simplified .grid.lg\:grid-cols-2 {
+  grid-template-columns: 1fr !important;
+}
+
+/* Clear visual hierarchy: strong heading contrast */
+html.mode-simplified h1, html.mode-simplified h2,
+html.mode-simplified h3, html.mode-simplified h4 {
+  color: #0F172A !important;
+}
+
+/* ============================================================
+   VOICE NAVIGATION MODE
+   Larger click targets, clear focus indicators, mic-ready UI.
+   ============================================================ */
+
+html.mode-voice button,
+html.mode-voice a,
+html.mode-voice [role="button"] {
+  min-height: 48px !important;
+  min-width: 48px !important;
+}
+
+html.mode-voice *:focus-visible {
+  outline: 3px solid #7C3AED !important;
+  outline-offset: 4px !important;
+  border-radius: 6px !important;
+}
+
+/* Stronger contrast for voice mode text */
+html.mode-voice body,
+html.mode-voice p,
+html.mode-voice span {
+  color: #1e293b !important;
+}
+
+html.mode-voice .text-slate-500,
+html.mode-voice .text-slate-400 {
+  color: #475569 !important;
+}
+

@@ -28,7 +28,7 @@ import {
 import { transcribeAudio, getBestMimeType } from '../whisperClient';
 
 // ── Types ──────────────────────────────────────────────────────────────────
-export type SpeechState = 'idle' | 'listening' | 'processing' | 'speaking' | 'error';
+export type SpeechState = 'idle' | 'listening' | 'processing' | 'speaking' | 'paused' | 'error';
 export type { VoiceLang, CommandMatch };
 
 // Max recording duration for the MediaRecorder path (ms)
@@ -109,8 +109,26 @@ export function useSpeech() {
     setErrorMessage('');
   }, [clearRecordTimer]);
 
+  const pauseTTS = useCallback(() => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.pause();
+      setSpeechState('paused');
+    }
+  }, []);
+
+  const resumeTTS = useCallback(() => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.resume();
+      setSpeechState('speaking');
+    }
+  }, []);
+
   // ── Text-to-Speech ────────────────────────────────────────────────────
-  const speak = useCallback((text: string, lang?: VoiceLang) => {
+  const speak = useCallback((
+    text: string,
+    lang?: VoiceLang,
+    options?: { volume?: number; rate?: number; voiceURI?: string | null; onProgress?: (percent: number, charIndex: number) => void }
+  ) => {
     cancel();
     cancelledRef.current = false;
 
@@ -122,8 +140,31 @@ export function useSpeech() {
     setSpeechState('speaking');
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = LANG_TO_BCP47[lang ?? voiceLang];
+    
+    if (options?.volume !== undefined) utterance.volume = Math.max(0, Math.min(1, options.volume));
+    if (options?.rate !== undefined) utterance.rate = Math.max(0.1, Math.min(10, options.rate));
+    
+    if (options?.voiceURI) {
+      const voices = window.speechSynthesis.getVoices();
+      const selectedVoice = voices.find(v => v.voiceURI === options.voiceURI);
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+      }
+    }
 
-    utterance.onend = () => { if (!cancelledRef.current) setSpeechState('idle'); };
+    utterance.onboundary = (e) => {
+      if (e.name === 'word' || e.name === 'sentence') {
+        const percent = Math.min(100, Math.round((e.charIndex / text.length) * 100));
+        options?.onProgress?.(percent, e.charIndex);
+      }
+    };
+
+    utterance.onend = () => { 
+      if (!cancelledRef.current) {
+        setSpeechState('idle'); 
+        options?.onProgress?.(100, text.length);
+      }
+    };
     utterance.onerror = (e) => {
       if (e.error !== 'canceled' && !cancelledRef.current) {
         console.warn('[useSpeech] TTS error:', e.error);
@@ -369,6 +410,8 @@ export function useSpeech() {
     startListening,
     stopRecording,
     speak,
+    pause: pauseTTS,
+    resume: resumeTTS,
     cancel,
     changeLanguage,
   };

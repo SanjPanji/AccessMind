@@ -1,5 +1,6 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { useAccessibility, type AccessibilityMode } from '../context/AccessibilityContext';
 import {
   User,
   ArrowLeft,
@@ -23,7 +24,7 @@ import {
   Clock,
   CheckCircle2
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import MobileNav from './MobileNav';
 import { useTranslation } from 'react-i18next';
 
@@ -31,55 +32,64 @@ export default function Profile() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
-  const [activeAccessibilityMode, setActiveAccessibilityMode] = useState<string | null>('adhd');
+  // Use the global accessibility context so mode selection here
+  // is in sync with the Accessibility page and Dashboard quick toggles.
+  const { activeMode: activeAccessibilityMode, setActiveMode: setActiveAccessibilityMode } = useAccessibility();
 
-  const quickAccessibilityModes = [
+  // Only the three core modes supported by the context (voice navigates to its own page)
+  const quickAccessibilityModes: Array<{
+    id: AccessibilityMode;
+    name: string;
+    icon: React.ElementType;
+    color: string;
+    description: string;
+  }> = [
     {
       id: 'adhd',
-      name: 'ADHD Mode',
+      name: t('profile.adhdMode'),
       icon: Zap,
       color: 'blue',
-      description: 'Focus-centered interface'
+      description: t('profile.adhdDesc')
     },
     {
       id: 'dyslexia',
-      name: 'Dyslexia Mode',
+      name: t('profile.dyslexiaMode'),
       icon: BookOpen,
       color: 'purple',
-      description: 'Reading-optimized layout'
+      description: t('profile.dyslexiaDesc')
     },
     {
       id: 'low-vision',
-      name: 'Low Vision',
+      name: t('profile.lowVisionMode'),
       icon: Eye,
       color: 'green',
-      description: 'Enhanced visibility'
+      description: t('profile.lowVisionDesc')
     },
     {
-      id: 'voice',
-      name: 'Voice Control',
+      id: null,
+      name: t('profile.voiceMode'),
       icon: Mic,
       color: 'pink',
-      description: 'Hands-free navigation'
+      description: t('profile.voiceDesc')
     }
   ];
 
   const stats = [
-    { label: 'Attendance', value: '94%', icon: CheckCircle2, color: 'green' },
-    { label: 'GPA', value: '89.3', icon: Award, color: 'blue' },
-    { label: 'Assignments', value: '24/26', icon: BarChart3, color: 'purple' },
-    { label: 'Study Hours', value: '48h', icon: Clock, color: 'orange' }
+    { label: t('profile.statAttendance'), value: '94%', icon: CheckCircle2, color: 'green' },
+    { label: t('profile.statGpa'), value: '89.3', icon: Award, color: 'blue' },
+    { label: t('profile.statAssignments'), value: '24/26', icon: BarChart3, color: 'purple' },
+    { label: t('profile.statStudyHours'), value: '48h', icon: Clock, color: 'orange' }
   ];
 
   const profileData = {
-    name: 'Alex Johnson',
+    name: t('profile.alex'),
     email: 'alex.johnson@university.edu',
     phone: '+1 (555) 123-4567',
-    location: 'Stanford University, CA',
+    location: t('profile.stanford'),
     studentId: 'STU-2024-1234',
-    enrollmentDate: 'September 2023',
-    major: 'Computer Science',
-    year: 'Sophomore'
+    enrollmentDate: t('profile.sept2023'),
+    major: t('profile.majorCs'),
+    year: t('profile.sophomore')
   };
 
   return (
@@ -147,7 +157,15 @@ export default function Profile() {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.05 }}
-                onClick={() => setActiveAccessibilityMode(activeAccessibilityMode === mode.id ? null : mode.id)}
+                onClick={() => {
+                  if (mode.id === null) {
+                    // Voice button navigates to voice navigation page instead
+                    navigate('/voice-navigation');
+                  } else {
+                    // setActiveMode handles toggle: clicking active mode turns it off
+                    setActiveAccessibilityMode(mode.id);
+                  }
+                }}
                 className={`relative p-6 rounded-2xl border-2 transition-all ${
                   activeAccessibilityMode === mode.id
                     ? `bg-white border-${mode.color}-500 shadow-lg shadow-${mode.color}-500/20`
@@ -176,7 +194,7 @@ export default function Profile() {
               onClick={() => navigate('/accessibility')}
               className="text-sm font-medium text-blue-600 hover:text-blue-700"
             >
-              {t('profile.advancedSettings')} →
+              {t('profile.advancedSettings')} в†’
             </button>
           </div>
         </motion.div>
@@ -203,10 +221,10 @@ export default function Profile() {
                   </div>
                   <div className="flex-1">
                     <h2 className="text-3xl font-bold text-slate-900 mb-1">{profileData.name}</h2>
-                    <p className="text-slate-600 mb-2">{profileData.major} • {profileData.year}</p>
+                    <p className="text-slate-600 mb-2">{profileData.major} вЂў {profileData.year}</p>
                     <div className="flex items-center gap-2 text-sm text-slate-500">
                       <Calendar className="w-4 h-4" />
-                      <span>Enrolled since {profileData.enrollmentDate}</span>
+                      <span>{t('profile.enrolledSince')} {profileData.enrollmentDate}</span>
                     </div>
                   </div>
                 </div>
@@ -217,7 +235,7 @@ export default function Profile() {
                       <Mail className="w-5 h-5 text-blue-600" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-slate-600 mb-1">Email</p>
+                      <p className="text-xs text-slate-600 mb-1">{t('profile.email')}</p>
                       <p className="text-sm font-medium text-slate-900 truncate">{profileData.email}</p>
                     </div>
                   </div>
@@ -227,7 +245,7 @@ export default function Profile() {
                       <Phone className="w-5 h-5 text-purple-600" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-xs text-slate-600 mb-1">Phone</p>
+                      <p className="text-xs text-slate-600 mb-1">{t('profile.phone')}</p>
                       <p className="text-sm font-medium text-slate-900">{profileData.phone}</p>
                     </div>
                   </div>
@@ -237,7 +255,7 @@ export default function Profile() {
                       <MapPin className="w-5 h-5 text-green-600" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-xs text-slate-600 mb-1">Location</p>
+                      <p className="text-xs text-slate-600 mb-1">{t('profile.location')}</p>
                       <p className="text-sm font-medium text-slate-900">{profileData.location}</p>
                     </div>
                   </div>
@@ -247,7 +265,7 @@ export default function Profile() {
                       <User className="w-5 h-5 text-orange-600" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-xs text-slate-600 mb-1">Student ID</p>
+                      <p className="text-xs text-slate-600 mb-1">{t('profile.studentId')}</p>
                       <p className="text-sm font-medium text-slate-900">{profileData.studentId}</p>
                     </div>
                   </div>
@@ -334,3 +352,4 @@ export default function Profile() {
     </div>
   );
 }
+

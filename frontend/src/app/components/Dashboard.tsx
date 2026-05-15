@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
+import { useAccessibility } from '../context/AccessibilityContext';
 import MobileNav from './MobileNav';
 import {
   Brain,
@@ -29,23 +30,26 @@ export default function Dashboard() {
   const { t, i18n } = useTranslation();
   const [showAIAssistant, setShowAIAssistant] = useState(false);
 
+  // Connect to global accessibility context for quick toggles
+  const { activeMode, setActiveMode, settings, updateSettings } = useAccessibility();
+
   const upcomingClasses = [
-    { id: 1, name: 'Advanced Mathematics', time: '10:00 AM', room: 'Hall 204', color: 'blue' },
-    { id: 2, name: 'Computer Science', time: '2:00 PM', room: 'Lab 3', color: 'purple' },
-    { id: 3, name: 'Physics Lab', time: '4:30 PM', room: 'Lab 1', color: 'green' }
+    { id: 1, name: t('dashboard.mathAdv'), time: '10:00 AM', room: t('dashboard.hall204'), color: 'blue' },
+    { id: 2, name: t('dashboard.cs'), time: '2:00 PM', room: t('dashboard.lab3'), color: 'purple' },
+    { id: 3, name: t('dashboard.physLab'), time: '4:30 PM', room: t('dashboard.lab1'), color: 'green' }
   ];
 
   const assignments = [
-    { id: 1, title: 'Math Problem Set 5', dueDate: 'Tomorrow', status: 'pending', subject: 'Mathematics' },
-    { id: 2, title: 'CS Project Submission', dueDate: 'May 16', status: 'in-progress', subject: 'Computer Science' },
-    { id: 3, title: 'Physics Report', dueDate: 'May 18', status: 'pending', subject: 'Physics' }
+    { id: 1, title: t('dashboard.mathProb'), dueDate: t('dashboard.tomorrow'), status: 'pending', subject: t('dashboard.math') },
+    { id: 2, title: t('dashboard.csProj'), dueDate: t('dashboard.may16'), status: 'in-progress', subject: t('dashboard.cs') },
+    { id: 3, title: t('dashboard.physRep'), dueDate: t('dashboard.may18'), status: 'pending', subject: t('dashboard.physics') }
   ];
 
   const grades = [
-    { subject: 'Mathematics', grade: 'A', percentage: 92, trend: 'up' },
-    { subject: 'Computer Science', grade: 'A-', percentage: 88, trend: 'up' },
-    { subject: 'Physics', grade: 'B+', percentage: 85, trend: 'stable' },
-    { subject: 'English', grade: 'A', percentage: 94, trend: 'up' }
+    { subject: t('dashboard.math'), grade: 'A', percentage: 92, trend: 'up' },
+    { subject: t('dashboard.cs'), grade: 'A-', percentage: 88, trend: 'up' },
+    { subject: t('dashboard.physics'), grade: 'B+', percentage: 85, trend: 'stable' },
+    { subject: t('dashboard.english'), grade: 'A', percentage: 94, trend: 'up' }
   ];
 
   const quickActions = [
@@ -119,8 +123,8 @@ export default function Dashboard() {
                   className="w-9 h-9 rounded-full border-2 border-blue-200"
                 />
                 <div className="hidden lg:block">
-                  <p className="text-sm font-medium text-slate-900">Alex Johnson</p>
-                  <p className="text-xs text-slate-500">Student</p>
+                  <p className="text-sm font-medium text-slate-900">{i18n.language === 'ru' ? 'Алекс Джонсон' : i18n.language === 'kk' ? 'Алекс Джонсон' : 'Alex Johnson'}</p>
+                  <p className="text-xs text-slate-500">{t('dashboard.student')}</p>
                 </div>
               </div>
             </div>
@@ -132,7 +136,7 @@ export default function Dashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-slate-900 mb-2">{t('dashboard.welcome', { name: 'Alex' })}</h2>
+          <h2 className="text-3xl font-bold text-slate-900 mb-2">{t('dashboard.welcome', { name: i18n.language === 'ru' || i18n.language === 'kk' ? 'Алекс' : 'Alex' })}</h2>
           <p className="text-slate-600">{t('dashboard.subtitle')}</p>
         </div>
 
@@ -163,7 +167,7 @@ export default function Dashboard() {
                   {t('dashboard.todaysSchedule')}
                 </h3>
                 <div className="flex items-center gap-4">
-                  <span className="text-sm text-slate-500">May 14, 2026</span>
+                  <span className="text-sm text-slate-500">{t('dashboard.dateToday')}</span>
                   <button 
                     onClick={() => navigate('/attendance')}
                     className="text-sm text-blue-600 hover:text-blue-700 font-medium"
@@ -189,9 +193,6 @@ export default function Dashboard() {
                         <span>{classItem.room}</span>
                       </div>
                     </div>
-                    <button className="p-2 rounded-lg hover:bg-white/50 transition-colors">
-                      <Plus className="w-5 h-5 text-slate-600" />
-                    </button>
                   </div>
                 ))}
               </div>
@@ -234,13 +235,13 @@ export default function Dashboard() {
                       <p className="text-sm text-slate-600">{assignment.subject}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-medium text-slate-900">Due {assignment.dueDate}</p>
+                      <p className="text-sm font-medium text-slate-900">{t('dashboard.due')} {assignment.dueDate}</p>
                       <span className={`text-xs px-2 py-1 rounded-full ${
                         assignment.status === 'pending' ? 'bg-orange-100 text-orange-700' :
                         assignment.status === 'in-progress' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
                       }`}>
-                        {assignment.status === 'pending' ? 'Not Started' :
-                         assignment.status === 'in-progress' ? 'In Progress' : 'Completed'}
+                        {assignment.status === 'pending' ? t('dashboard.notStarted') :
+                         assignment.status === 'in-progress' ? t('dashboard.inProgress') : t('dashboard.completed')}
                       </span>
                     </div>
                   </div>
@@ -251,22 +252,60 @@ export default function Dashboard() {
 
           {/* Right Column */}
           <div className="space-y-6">
-            {/* Accessibility Quick Toggle */}
+            {/* Accessibility Quick Toggle — wired to global context */}
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
               <h3 className="text-lg font-bold text-slate-900 mb-4">{t('dashboard.quickAccessibility')}</h3>
               <div className="space-y-3">
-                <button className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-blue-50 hover:border-blue-200 border border-slate-200 transition-all">
-                  <span className="text-sm font-medium text-slate-700">{t('dashboard.adhdMode')}</span>
-                  <Zap className="w-4 h-4 text-slate-400" />
+
+                {/* ADHD Mode — toggles global mode via context */}
+                <button
+                  onClick={() => setActiveMode('adhd')}
+                  className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${
+                    activeMode === 'adhd'
+                      ? 'bg-blue-50 border-blue-400'
+                      : 'bg-slate-50 hover:bg-blue-50 hover:border-blue-200 border-slate-200'
+                  }`}
+                >
+                  <span className={`text-sm font-medium ${activeMode === 'adhd' ? 'text-blue-800' : 'text-slate-700'}`}>
+                    {t('dashboard.adhdMode')}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {activeMode === 'adhd' && (
+                      <span className="text-xs font-bold text-blue-600 uppercase tracking-wide">ON</span>
+                    )}
+                    <Zap className={`w-4 h-4 ${activeMode === 'adhd' ? 'text-blue-500' : 'text-slate-400'}`} />
+                  </div>
                 </button>
-                <button className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-blue-50 hover:border-blue-200 border border-slate-200 transition-all">
+
+                {/* Voice Commands — navigates to voice navigation page */}
+                <button
+                  onClick={() => navigate('/voice-navigation')}
+                  className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-blue-50 hover:border-blue-200 border border-slate-200 transition-all"
+                >
                   <span className="text-sm font-medium text-slate-700">{t('dashboard.voiceCommands')}</span>
                   <Mic className="w-4 h-4 text-slate-400" />
                 </button>
-                <button className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-blue-50 hover:border-blue-200 border border-slate-200 transition-all">
-                  <span className="text-sm font-medium text-slate-700">{t('dashboard.textToSpeech')}</span>
-                  <BookOpen className="w-4 h-4 text-slate-400" />
+
+                {/* Text-to-Speech — toggles individual setting in context */}
+                <button
+                  onClick={() => updateSettings({ textToSpeech: !settings.textToSpeech })}
+                  className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${
+                    settings.textToSpeech
+                      ? 'bg-purple-50 border-purple-400'
+                      : 'bg-slate-50 hover:bg-blue-50 hover:border-blue-200 border-slate-200'
+                  }`}
+                >
+                  <span className={`text-sm font-medium ${settings.textToSpeech ? 'text-purple-800' : 'text-slate-700'}`}>
+                    {t('dashboard.textToSpeech')}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {settings.textToSpeech && (
+                      <span className="text-xs font-bold text-purple-600 uppercase tracking-wide">ON</span>
+                    )}
+                    <BookOpen className={`w-4 h-4 ${settings.textToSpeech ? 'text-purple-500' : 'text-slate-400'}`} />
+                  </div>
                 </button>
+
               </div>
             </div>
 
@@ -315,7 +354,7 @@ export default function Dashboard() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-blue-100">{t('dashboard.studyTime')}</span>
-                  <span className="text-xl font-bold">12.5 hrs</span>
+                  <span className="text-xl font-bold">12.5 {i18n.language === 'ru' ? 'ч' : i18n.language === 'kk' ? 'сағ' : 'hrs'}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-blue-100">{t('dashboard.assignmentsCompleted')}</span>
@@ -338,7 +377,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5" />
-                <h3 className="font-semibold">AI Assistant</h3>
+                <h3 className="font-semibold">{t('ai.title')}</h3>
               </div>
               <button
                 onClick={() => setShowAIAssistant(false)}
@@ -351,17 +390,17 @@ export default function Dashboard() {
           <div className="p-4 h-96 overflow-y-auto">
             <div className="space-y-4">
               <div className="bg-slate-50 p-3 rounded-xl">
-                <p className="text-sm text-slate-700">Hi Alex! How can I help you today?</p>
+                <p className="text-sm text-slate-700">{t('ai.greeting')}</p>
               </div>
               <div className="flex gap-2 flex-wrap">
                 <button className="px-3 py-2 text-xs bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors">
-                  Explain my assignment
+                  {t('ai.prompt1')}
                 </button>
                 <button className="px-3 py-2 text-xs bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors">
-                  Summarize lecture notes
+                  {t('ai.prompt2')}
                 </button>
                 <button className="px-3 py-2 text-xs bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors">
-                  Quiz me on Physics
+                  {t('ai.prompt3')}
                 </button>
               </div>
             </div>
@@ -370,7 +409,7 @@ export default function Dashboard() {
             <div className="flex gap-2">
               <input
                 type="text"
-                placeholder="Ask me anything..."
+                placeholder={t('ai.placeholder')}
                 className="flex-1 px-4 py-2 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none text-sm"
               />
               <button className="p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors">

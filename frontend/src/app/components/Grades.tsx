@@ -36,13 +36,13 @@ interface SubjectData {
 const subjectsData: SubjectData[] = [
   {
     id: 'Mathematics',
-    name: 'Mathematics',
-    teacher: 'Dr. Smith',
+    name: 'dashboard.math',
+    teacher: 'attendance.drSmith',
     average: 91.25,
     assignments: [
       {
         id: 1,
-        name: 'Derivatives and Integrals',
+        name: 'grades.derivInt',
         type: 'exam',
         grades: {
           '01.05': { value: 92, maxValue: 100, type: 'exam' },
@@ -51,7 +51,7 @@ const subjectsData: SubjectData[] = [
       },
       {
         id: 2,
-        name: 'Chapter 7 Problems',
+        name: 'grades.chap7',
         type: 'quiz',
         grades: {
           '03.05': { value: 88, maxValue: 100, type: 'quiz' },
@@ -60,7 +60,7 @@ const subjectsData: SubjectData[] = [
       },
       {
         id: 3,
-        name: 'Problem Set 4',
+        name: 'grades.probSet4',
         type: 'homework',
         grades: {
           '02.05': { value: 95, maxValue: 100, type: 'homework' },
@@ -70,7 +70,7 @@ const subjectsData: SubjectData[] = [
       },
       {
         id: 4,
-        name: 'Class Engagement',
+        name: 'grades.classEng',
         type: 'participation',
         grades: {
           '05.05': { value: 90, maxValue: 100, type: 'participation' },
@@ -79,7 +79,7 @@ const subjectsData: SubjectData[] = [
       },
       {
         id: 5,
-        name: 'Algebra Quiz',
+        name: 'grades.algQuiz',
         type: 'quiz',
         grades: {
           '06.05': { value: 87, maxValue: 100, type: 'quiz' },
@@ -90,13 +90,13 @@ const subjectsData: SubjectData[] = [
   },
   {
     id: 'Computer Science',
-    name: 'Computer Science',
-    teacher: 'Prof. Johnson',
+    name: 'dashboard.cs',
+    teacher: 'attendance.profJohnson',
     average: 88.75,
     assignments: [
       {
         id: 1,
-        name: 'Web Development Project',
+        name: 'grades.webDev',
         type: 'exam',
         grades: {
           '02.05': { value: 85, maxValue: 100, type: 'exam' },
@@ -105,7 +105,7 @@ const subjectsData: SubjectData[] = [
       },
       {
         id: 2,
-        name: 'React Components',
+        name: 'grades.reactComp',
         type: 'quiz',
         grades: {
           '04.05': { value: 90, maxValue: 100, type: 'quiz' },
@@ -114,7 +114,7 @@ const subjectsData: SubjectData[] = [
       },
       {
         id: 3,
-        name: 'Algorithm Challenge',
+        name: 'grades.algoChal',
         type: 'homework',
         grades: {
           '01.05': { value: 92, maxValue: 100, type: 'homework' },
@@ -124,7 +124,7 @@ const subjectsData: SubjectData[] = [
       },
       {
         id: 4,
-        name: 'Code Reviews',
+        name: 'grades.codeRev',
         type: 'participation',
         grades: {
           '06.05': { value: 95, maxValue: 100, type: 'participation' }
@@ -134,13 +134,13 @@ const subjectsData: SubjectData[] = [
   },
   {
     id: 'Physics',
-    name: 'Physics',
-    teacher: 'Dr. Williams',
+    name: 'dashboard.physics',
+    teacher: 'attendance.drWilliams',
     average: 83.25,
     assignments: [
       {
         id: 1,
-        name: 'Mechanics Exam',
+        name: 'grades.mechExam',
         type: 'exam',
         grades: {
           '03.05': { value: 85, maxValue: 100, type: 'exam' }
@@ -148,7 +148,7 @@ const subjectsData: SubjectData[] = [
       },
       {
         id: 2,
-        name: 'Momentum Problems',
+        name: 'grades.momProb',
         type: 'quiz',
         grades: {
           '02.05': { value: 78, maxValue: 100, type: 'quiz' },
@@ -157,7 +157,7 @@ const subjectsData: SubjectData[] = [
       },
       {
         id: 3,
-        name: 'Lab Report 3',
+        name: 'grades.labRep3',
         type: 'homework',
         grades: {
           '05.05': { value: 82, maxValue: 100, type: 'homework' },
@@ -166,7 +166,7 @@ const subjectsData: SubjectData[] = [
       },
       {
         id: 4,
-        name: 'Lab Participation',
+        name: 'grades.labPart',
         type: 'participation',
         grades: {
           '07.05': { value: 88, maxValue: 100, type: 'participation' },
@@ -177,13 +177,13 @@ const subjectsData: SubjectData[] = [
   },
   {
     id: 'English',
-    name: 'English',
-    teacher: 'Ms. Davis',
+    name: 'dashboard.english',
+    teacher: 'attendance.msDavis',
     average: 94.25,
     assignments: [
       {
         id: 1,
-        name: 'Literature Essay',
+        name: 'grades.litEssay',
         type: 'exam',
         grades: {
           '01.05': { value: 94, maxValue: 100, type: 'exam' }
@@ -191,7 +191,7 @@ const subjectsData: SubjectData[] = [
       },
       {
         id: 2,
-        name: 'Grammar Test',
+        name: 'grades.gramTest',
         type: 'quiz',
         grades: {
           '04.05': { value: 92, maxValue: 100, type: 'quiz' },
@@ -200,7 +200,7 @@ const subjectsData: SubjectData[] = [
       },
       {
         id: 3,
-        name: 'Reading Homework',
+        name: 'grades.readHw',
         type: 'homework',
         grades: {
           '03.05': { value: 96, maxValue: 100, type: 'homework' },
@@ -210,7 +210,7 @@ const subjectsData: SubjectData[] = [
       },
       {
         id: 4,
-        name: 'Discussion',
+        name: 'grades.discuss',
         type: 'participation',
         grades: {
           '06.05': { value: 95, maxValue: 100, type: 'participation' },
@@ -243,12 +243,12 @@ function getGradeDisplay(value: number) {
   return value;
 }
 
-function getTypeLabel(type: string) {
+function getTypeLabel(type: string, t: any) {
   switch (type) {
-    case 'homework': return 'HW';
-    case 'quiz': return 'Quiz';
-    case 'exam': return 'Exam';
-    case 'participation': return 'Part';
+    case 'homework': return t('grades.hw');
+    case 'quiz': return t('grades.quiz');
+    case 'exam': return t('grades.exam');
+    case 'participation': return t('grades.part');
     default: return '';
   }
 }
@@ -281,13 +281,21 @@ export default function Grades() {
       <header className="bg-white/80 backdrop-blur-lg border-b border-slate-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-2 rounded-xl">
-                <Award className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-slate-900">{t('grades.title')}</h1>
-                <p className="text-xs text-slate-600">{t('grades.subtitle')}</p>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="p-2 rounded-xl hover:bg-slate-100 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5 text-slate-600" />
+              </button>
+              <div className="flex items-center gap-3">
+                <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-2 rounded-xl">
+                  <Award className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold text-slate-900">{t('grades.title')}</h1>
+                  <p className="text-xs text-slate-600">{t('grades.subtitle')}</p>
+                </div>
               </div>
             </div>
             <button
@@ -315,7 +323,7 @@ export default function Grades() {
               <option value="all">{t('grades.allSubjects')}</option>
               {subjectsData.map((subject) => (
                 <option key={subject.id} value={subject.id}>
-                  {subject.name}
+                  {t(subject.name)}
                 </option>
               ))}
             </select>
@@ -344,10 +352,10 @@ export default function Grades() {
                   </>
                 ) : (
                   <>
-                    <h2 className="text-2xl font-bold text-slate-900 mb-1">{selectedSubjectData!.name}</h2>
+                    <h2 className="text-2xl font-bold text-slate-900 mb-1">{t(selectedSubjectData!.name)}</h2>
                     <div className="flex items-center gap-2 text-sm text-slate-600">
                       <User className="w-4 h-4" />
-                      <span>{selectedSubjectData!.teacher}</span>
+                      <span>{t(selectedSubjectData!.teacher)}</span>
                     </div>
                   </>
                 )}
@@ -423,7 +431,7 @@ export default function Grades() {
                         }`}
                     >
                       <td className="sticky left-0 z-10 bg-inherit px-6 py-4 border-r border-slate-200 font-semibold text-slate-900">
-                        {subject.name}
+                        {t(subject.name)}
                       </td>
                       {dates.map((date) => {
                         const grade = getBestGradeForDate(subject, date);
@@ -459,9 +467,9 @@ export default function Grades() {
                                 assignment.type === 'homework' ? 'bg-purple-100 text-purple-700' :
                                   'bg-green-100 text-green-700'
                             }`}>
-                            {getTypeLabel(assignment.type)}
+                            {getTypeLabel(assignment.type, t)}
                           </div>
-                          <span className="font-medium text-slate-900">{assignment.name}</span>
+                          <span className="font-medium text-slate-900">{t(assignment.name)}</span>
                         </div>
                       </td>
                       {dates.map((date) => {

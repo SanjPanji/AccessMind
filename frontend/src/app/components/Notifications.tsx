@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import {
   Award,
   FileText,
@@ -26,88 +27,33 @@ interface Notification {
 
 export default function Notifications() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [filter, setFilter] = useState<string>('all');
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: 1,
-      type: 'grade',
-      title: 'New grade received in Mathematics',
-      description: 'You scored 92% on Algebra Quiz',
-      timestamp: '2h ago',
-      isRead: false,
-      date: new Date()
-    },
-    {
-      id: 2,
-      type: 'assignment',
-      title: 'New assignment posted in Computer Science',
-      description: 'Web Development Project due May 20',
-      timestamp: '3h ago',
-      isRead: false,
-      date: new Date()
-    },
-    {
-      id: 3,
-      type: 'deadline',
-      title: 'Assignment deadline approaching',
-      description: 'Physics Lab Report due in 2 days',
-      timestamp: '5h ago',
-      isRead: false,
-      date: new Date()
-    },
-    {
-      id: 4,
-      type: 'grade',
-      title: 'Grade updated in English',
-      description: 'Your Literature Essay received A (94%)',
-      timestamp: 'Yesterday',
-      isRead: true,
-      date: new Date(Date.now() - 86400000)
-    },
-    {
-      id: 5,
-      type: 'system',
-      title: 'System maintenance scheduled',
-      description: 'Platform will be unavailable on May 18, 2:00-4:00 AM',
-      timestamp: 'Yesterday',
-      isRead: true,
-      date: new Date(Date.now() - 86400000)
-    },
-    {
-      id: 6,
-      type: 'assignment',
-      title: 'Assignment submitted successfully',
-      description: 'Your Math Problem Set 4 has been received',
-      timestamp: 'Yesterday',
-      isRead: true,
-      date: new Date(Date.now() - 86400000)
-    },
-    {
-      id: 7,
-      type: 'grade',
-      title: 'Grade posted in Physics',
-      description: 'Mechanics Exam: 85%',
-      timestamp: '3 days ago',
-      isRead: true,
-      date: new Date(Date.now() - 259200000)
-    },
-    {
-      id: 8,
-      type: 'deadline',
-      title: 'Upcoming class tomorrow',
-      description: 'Advanced Mathematics at 10:00 AM',
-      timestamp: '4 days ago',
-      isRead: true,
-      date: new Date(Date.now() - 345600000)
-    }
+  const [notifications, setNotifications] = useState<Omit<Notification, 'title' | 'description' | 'timestamp'>[]>([
+    { id: 1, type: 'grade', isRead: false, date: new Date() },
+    { id: 2, type: 'assignment', isRead: false, date: new Date() },
+    { id: 3, type: 'deadline', isRead: false, date: new Date() },
+    { id: 4, type: 'grade', isRead: true, date: new Date(Date.now() - 86400000) },
+    { id: 5, type: 'system', isRead: true, date: new Date(Date.now() - 86400000) },
+    { id: 6, type: 'assignment', isRead: true, date: new Date(Date.now() - 86400000) },
+    { id: 7, type: 'grade', isRead: true, date: new Date(Date.now() - 259200000) },
+    { id: 8, type: 'deadline', isRead: true, date: new Date(Date.now() - 345600000) }
   ]);
 
+  // Compute translated properties dynamically during render
+  const reactiveNotifications: Notification[] = notifications.map(n => ({
+    ...n,
+    title: t(`notifications.title${n.id}`),
+    description: t(`notifications.desc${n.id}`),
+    timestamp: t(`notifications.time${n.id}`)
+  }));
+
   const filters = [
-    { id: 'all', label: 'All' },
-    { id: 'grade', label: 'Grades' },
-    { id: 'assignment', label: 'Assignments' },
-    { id: 'deadline', label: 'Deadlines' },
-    { id: 'system', label: 'System' }
+    { id: 'all', label: t('notifications.filterAll') },
+    { id: 'grade', label: t('notifications.filterGrades') },
+    { id: 'assignment', label: t('notifications.filterAssignments') },
+    { id: 'deadline', label: t('notifications.filterDeadlines') },
+    { id: 'system', label: t('notifications.filterSystem') }
   ];
 
   const getIcon = (type: string) => {
@@ -131,8 +77,8 @@ export default function Notifications() {
   };
 
   const filteredNotifications = filter === 'all'
-    ? notifications
-    : notifications.filter(n => n.type === filter);
+    ? reactiveNotifications
+    : reactiveNotifications.filter(n => n.type === filter);
 
   const groupNotifications = (notifs: Notification[]) => {
     const now = new Date();
@@ -163,7 +109,7 @@ export default function Notifications() {
   };
 
   const groupedNotifications = groupNotifications(filteredNotifications);
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const unreadCount = reactiveNotifications.filter(n => !n.isRead).length;
 
   const markAsRead = (id: number) => {
     setNotifications(notifications.map(n =>
@@ -198,8 +144,8 @@ export default function Notifications() {
                   )}
                 </div>
                 <div>
-                  <h1 className="text-lg font-bold text-slate-900">Notifications</h1>
-                  <p className="text-xs text-slate-600">{unreadCount} unread</p>
+                  <h1 className="text-lg font-bold text-slate-900">{t('notifications.title')}</h1>
+                  <p className="text-xs text-slate-600">{unreadCount} {t('notifications.unread')}</p>
                 </div>
               </div>
             </div>
@@ -209,7 +155,7 @@ export default function Notifications() {
                 className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors font-medium text-sm"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span className="hidden sm:inline">Mark all as read</span>
+                <span className="hidden sm:inline">{t('notifications.markAllAsRead')}</span>
               </button>
             )}
           </div>
@@ -240,7 +186,7 @@ export default function Notifications() {
           {groupedNotifications.today.length > 0 && (
             <div>
               <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-4">
-                Today
+                {t('notifications.today')}
               </h2>
               <div className="space-y-3">
                 {groupedNotifications.today.map((notification, index) => {
@@ -283,7 +229,7 @@ export default function Notifications() {
                           {!notification.isRead && (
                             <div className="flex items-center gap-2 mt-3">
                               <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                              <span className="text-xs font-medium text-blue-600">Unread</span>
+                              <span className="text-xs font-medium text-blue-600">{t('notifications.statusUnread')}</span>
                             </div>
                           )}
                         </div>
@@ -299,7 +245,7 @@ export default function Notifications() {
           {groupedNotifications.yesterday.length > 0 && (
             <div>
               <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-4">
-                Yesterday
+                {t('notifications.yesterday')}
               </h2>
               <div className="space-y-3">
                 {groupedNotifications.yesterday.map((notification, index) => {
@@ -352,7 +298,7 @@ export default function Notifications() {
           {groupedNotifications.thisWeek.length > 0 && (
             <div>
               <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-4">
-                This Week
+                {t('notifications.thisWeek')}
               </h2>
               <div className="space-y-3">
                 {groupedNotifications.thisWeek.map((notification, index) => {
@@ -407,8 +353,8 @@ export default function Notifications() {
               <div className="inline-flex items-center justify-center w-20 h-20 bg-slate-100 rounded-2xl mb-4">
                 <Bell className="w-10 h-10 text-slate-400" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">No notifications</h3>
-              <p className="text-slate-600">You're all caught up!</p>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">{t('notifications.emptyTitle')}</h3>
+              <p className="text-slate-600">{t('notifications.emptyDesc')}</p>
             </div>
           )}
         </div>

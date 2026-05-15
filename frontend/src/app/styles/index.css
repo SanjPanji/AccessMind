@@ -1,3 +1,6 @@
 @import './fonts.css';
 @import './tailwind.css';
 @import './theme.css';
+@import './globals.css';
+/* Accessibility mode overrides — must come last to win specificity */
+@import './accessibility-modes.css';

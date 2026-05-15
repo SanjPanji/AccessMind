@@ -83,3 +83,43 @@ export async function fetchCerebrasChat(
   }, signal);
   return fullText;
 }
+
+export async function fetchCerebrasJSON(
+  messages: ChatMessage[],
+  signal?: AbortSignal
+): Promise<any> {
+  const apiKey = import.meta.env.VITE_CEREBRAS_API_KEY;
+  if (!apiKey) {
+    throw new Error("VITE_CEREBRAS_API_KEY is not set in environment variables");
+  }
+
+  const response = await fetch("https://api.cerebras.ai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "llama3.1-8b",
+      messages,
+      response_format: { type: "json_object" },
+      temperature: 0.2, // Low temperature for more deterministic JSON
+    }),
+    signal,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Cerebras API error: ${response.status} ${errorText}`);
+  }
+
+  const data = await response.json();
+  const content = data.choices?.[0]?.message?.content || "{}";
+  
+  try {
+    return JSON.parse(content);
+  } catch (e) {
+    console.error("Failed to parse JSON response:", content);
+    throw new Error("Invalid JSON response from AI");
+  }
+}
